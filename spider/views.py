@@ -2,7 +2,7 @@
 from celery.task        import task, periodic_task
 from datetime           import datetime, timedelta
 from django.core.cache  import cache
-from grabdoc.celery     import task_revoke, get_count_workers
+from grab_doc.celery     import task_revoke, get_count_workers
 from models             import get_one_record, Scans, FileLinks, Websites
 from RedisBuffer        import RedisBuffer
 import time

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import djcelery
+from kombu import Exchange, Queue
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,6 +74,25 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_TRACK_STARTED = True  # что бы задачи сообщали когда они запустятся
 CELERYD_PREFETCH_MULTIPLIER = 1  # количество зарезервированных задачь для одного исполнителя
 # http://docs.celeryproject.org/en/latest/configuration.html#celeryd-prefetch-multiplier
+# -----------------------------------
+# -----------------------------------
+#
+CELERY_QUEUES = (
+    Queue('normal', Exchange('normal'), routing_key='normal'),
+    Queue('scan_routing', Exchange('scan_routing'), routing_key='scan_routing'),
+    Queue('scan_worker',  Exchange('scan_worker'),  routing_key='scan_worker' ),
+)
+
+CELERY_DEFAULT_QUEUE       = 'normal'
+CELERY_DEFAULT_EXCHANGE    = 'normal'
+CELERY_DEFAULT_ROUTING_KEY = 'normal'
+
+CELERY_ROUTES = {
+    'spider.views.scan_routing': {'queue': 'scan_routing'},
+    # -- LOW PRIORITY QUEUE -- #
+    'spider.views.scan_worker': {'queue': 'scan_worker'},
+}
+# http://docs.celeryproject.org/en/latest/userguide/routing.html#exchanges-queues-and-routing-keys
 # -----------------------------------
 
 MIDDLEWARE_CLASSES = [

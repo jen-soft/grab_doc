@@ -32,7 +32,7 @@
             {% for file_link in current_scan.file_links %}
                 <tr>
                     <td style="display: table-cell">
-                        <a   href="{{ file_link.parent_url }}">{{ file_link.parent_url }}</a>
+                        <a   href="{{ file_link.parent }}">{{ file_link.parent }}</a>
                     </td>
                     <td style="display: table-cell">
                         <a target="_blank" href="{{ file_link.url }}">{{ file_link.url }}</a>

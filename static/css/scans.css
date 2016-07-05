@@ -29,13 +29,18 @@
     padding: 0;
     border-top:    1px #c4c1c4 solid;
     border-bottom: 5px #d1cdd1 solid;
+    background: #FFF;
 }
 .scans .website_info_hidden .content{
     display: block;
     overflow: hidden;
-    background: #FFF;
     margin: 0;
     padding: 0;
+    max-width: 1150px;
+}
+.scans .website_info_hidden .content td{
+    overflow: hidden;
+    max-width: 600px;
 }
 /* кнопка позволяющаяя скрыть дополнительную информацию к сайту */
 .scans .website_info_hidden .button_hide{

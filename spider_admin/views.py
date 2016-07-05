@@ -43,7 +43,7 @@ def index(request):
         website.count_total_scans      = Scans.objects.filter(website_id=website.id).count()      # всего сканов
         website.count_total_file_links = FileLinks.objects.filter(website_id=website.id).count()  # всего файловых ссылок
 
-    return render(request, 'web_interface/index.html', dict(websites=websites))
+    return render(request, 'spider_admin/index.html', dict(websites=websites))
 # ============================================================================
 
 
@@ -86,7 +86,7 @@ def get_system_status(request):
 # ============================================================================
 # доступ к всем найденным файлам по конкретному сайту
 def get_all_file_links(request, website_id):
-    return render(request, 'web_interface/get_all_file_links.html', dict(website_id=website_id))
+    return render(request, 'spider_admin/get_all_file_links.html', dict(website_id=website_id))
 
 
 def get_file_links(request, website_id, count, start_id):
@@ -98,7 +98,7 @@ def get_file_links(request, website_id, count, start_id):
     for elm in file_links:
         print(elm.id,')',elm.url,'')
     print('start_id', start_id)
-    result_html = render(request, 'web_interface/get_file_links.html', dict(file_links=file_links, start_id=start_id)).getvalue()
+    result_html = render(request, 'spider_admin/get_file_links.html', dict(file_links=file_links, start_id=start_id)).getvalue()
     #
     last_elm_id = None
     if len(file_links) > 0:
@@ -150,7 +150,7 @@ def get_scan_by_data(request, website_id, year, month, day, number):
     current_scan = scans[number]
     current_scan.file_links = FileLinks.objects.filter(scan_id=current_scan.id).order_by('-id')[:10]
     values = dict(scans=scans, current_scan=current_scan, website_id=website_id)
-    return render(request, 'web_interface/get_scan_by_data.html', values)
+    return render(request, 'spider_admin/get_scan_by_data.html', values)
 
 # TODO: создать функцию возвращающею ссылки по активному сканированию worker_api.get_status()['last_links']
 # ============================================================================

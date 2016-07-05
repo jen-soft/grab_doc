@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
+import djcelery
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +42,38 @@ INSTALLED_APPS = [
     'spider',
     'spider_admin',
 ]
+INSTALLED_APPS += ['redis_cache', ]
+CACHES = {
+    'default': {
+        "BACKEND": "redis_cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'PICKLE_VERSION': 2,
+        }
+    },
+}
+# -----------------------------------
+
+djcelery.setup_loader()
+INSTALLED_APPS += ['djcelery', ]
+# -----------------------------------
+# python ДРАЙВЕР для redis:
+BROKER_URL = 'redis://localhost:6379/0'
+# храним результаты выполнения задач так же в redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# в течение какого срока храним результаты, после чего они удаляются
+CELERY_TASK_RESULT_EXPIRES = 7 * 86400  # 7 days
+# это нужно для мониторинга наших воркеров
+CELERY_SEND_EVENTS = True
+# место хранения периодических задач (данные для планировщика)
+CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+# -----------------------------------
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TRACK_STARTED = True  # что бы задачи сообщали когда они запустятся
+CELERYD_PREFETCH_MULTIPLIER = 1  # количество зарезервированных задачь для одного исполнителя
+# http://docs.celeryproject.org/en/latest/configuration.html#celeryd-prefetch-multiplier
+# -----------------------------------
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
@@ -83,6 +116,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME': 'my_base',
+    #     'USER': 'my_base_user',
+    #     'PASSWORD': 'my_user_password',
+    #     'HOST': '',  # Set to empty string for localhost.
+    #     'PORT': '',  # Set to empty string for default.
+    # }
 }
 
 

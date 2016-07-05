@@ -1,0 +1,52 @@
+
+/* --------------------------------------------------------- */
+.scans .calendar_title td{
+    font-size: 12px;
+    padding: 4px;
+    color: #444;
+}
+/*        цветовая подсветка календарных дней                */
+/* в зависимости от наличия сканирования и результата */
+.scans .calendar_dey{
+    text-align: center;
+    padding: 0;
+}
+.scans .calendar_dey .have_files,
+.scans .calendar_dey .no_files{
+    display: inline-block;
+    padding: 8px;
+    margin-top: 2px ;
+    border-radius: 50%;
+}
+.scans .calendar_dey .have_files{ background: #df742f;  }
+.scans .calendar_dey .no_files{   background: #80a0ed;  }
+/* --------------------------------------------------------- */
+
+/* --------------------------------------------------------- */
+/*    скрытый блок дополнительной информации для сайта       */
+.scans .website_info_hidden {
+	display: none ;
+    padding: 0;
+    border-top:    1px #c4c1c4 solid;
+    border-bottom: 5px #d1cdd1 solid;
+}
+.scans .website_info_hidden .content{
+    display: block;
+    overflow: hidden;
+    background: #FFF;
+    margin: 0;
+    padding: 0;
+}
+/* кнопка позволяющаяя скрыть дополнительную информацию к сайту */
+.scans .website_info_hidden .button_hide{
+    display: block;
+    position: relative;
+}
+.scans .website_info_hidden .button_hide a{
+    display: inline-block;
+    position: absolute;
+    top:   0 ;
+    right: 0 ;
+    margin: 5px 7px;
+}
+/* --------------------------------------------------------- */

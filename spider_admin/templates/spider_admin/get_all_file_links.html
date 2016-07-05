@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}
+file links
+{% endblock %}
+
+
+{% block body %}
+    <style>
+        #file_links a{
+            display: block;
+            overflow: hidden;
+            max-width: 500px;
+        }
+    </style>
+    <div class='content'>
+        <table id="file_links"></table>
+    </div>
+
+    <script>
+        var last_elm_id = 0;
+        function get_more_content(){
+            var url = '/website/{{ website_id }}/files/count/100/start_id/'+last_elm_id+'/';
+            $.get(url, ajax_result_file_links,'json')
+        }
+        function ajax_result_file_links(returnedData){
+            $('#file_links')[0].innerHTML += returnedData.result_html ;
+            last_elm_id = returnedData.last_elm_id;
+        }
+    </script>
+
+    <script>
+        $( document ).ready( function () {
+            get_more_content();
+            //
+            window.onscroll = function () {
+                console.log('scroll', last_elm_id);
+                // Определять, что пользователь докрутил ползунок до конца страницы :
+                if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+                    get_more_content();
+                }
+            }
+        });
+    </script>
+
+{% endblock %}

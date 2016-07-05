@@ -1,0 +1,49 @@
+{% if scans %}
+    <table>
+        <tr>
+        {% for scan in scans %}
+            <th>
+                <a id='a_link_show_scan_{{ website_id.website_id }}' class="point"
+                                   href="javascript:get_scan_data( '{{ scan.website_id }}'
+                                   , {{ scan.data_finish|date:" 'Y','m','d' " }},'{{ forloop.counter0 }}' );"
+
+                   {% if scan.id == current_scan.id %}          style="color: #fff"
+                   {% else %}
+                        {% if scan.count_file_links_new < 1 %}  style="color: #444" {% endif %}
+                   {% endif %}
+
+                >
+                    {{ scan.data_finish|date:'d M H:i' }}(+{{ scan.count_file_links_new }})
+                <a/>
+            </th>
+            {% if forloop.counter0 == 6   %} </tr></table><table><tr>{% endif %}
+            {% if forloop.counter0 == 12  %} </tr></table><table><tr>{% endif %}
+            {% if forloop.counter0 == 18  %} </tr></table><table><tr>{% endif %}
+        {% endfor %}
+        </tr>
+    </table>
+
+    {% if current_scan.file_links %}
+        <table class="file_links">
+            <tr>
+                <th width="400px">parent url</th>
+                <th>file url</th>
+            </tr>
+            {% for file_link in current_scan.file_links %}
+                <tr>
+                    <td style="display: table-cell">
+                        <a   href="{{ file_link.parent_url }}">{{ file_link.parent_url }}</a>
+                    </td>
+                    <td style="display: table-cell">
+                        <a target="_blank" href="{{ file_link.url }}">{{ file_link.url }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        no any links for this scan
+    {% endif %}
+
+{% else %}
+    no fined scans
+{% endif %}

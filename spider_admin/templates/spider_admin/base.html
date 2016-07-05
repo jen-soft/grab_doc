@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% block gf_main_title %}{% endblock %}
+{% endblock %}
+
+{% block html_header %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/scans.css' %}">
+{% endblock %}
+
+
+{% block header %}
+        <form action="/add_new_website/" method="post">{% csrf_token %}
+            <label for="name"> add new website:</label>
+            <input name="website" id="website" type='text' placeholder='enter your url'>
+            <input type="submit" value="add" />
+        </form>
+
+{% endblock %}
+
+{% block body %}
+
+    <div class='content'>
+        {% block gf_main_content %}{% endblock %}
+    </div>
+{% endblock %}

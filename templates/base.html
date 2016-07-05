@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="shortcut icon" href="{% static 'img/favicon.gif' %}" type="image/gif">
+    <meta charset="UTF-8">
+    <title> {% block title %}{% endblock %} </title>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    {% block html_header %}{% endblock %}
+</head>
+
+<body>
+    {# ------------- обновение состояния работоспособности системы ----------------------- #}
+    <script type = "text/javascript" >
+        $( document ).ready(function(){ on_timer_status(); setInterval(on_timer_status, 5000); });
+        function on_timer_status() { $.get('/system_status/', ajax_result_system_status,'json')  }
+        function ajax_result_system_status(returnedData) {
+            var elm = document.getElementById("system_status");
+            if( returnedData['system_status'] ){ elm.className = 'system_status_ok';
+            }else{                            elm.className = 'system_status_no';    }
+        }
+    </script>
+    {# ------------- /обновение состояния работоспособности системы ---------------------- #}
+    <div id="background" >
+        <div class='header'>
+            <div class='logo'>
+                <h1>grabbot</h1> <h3>scan system of websites</h3>
+            </div>
+            <div id='system_status' class='system_status_no'></div>{# состояние системы - устанавливает JS #}
+            {% block header %}{% endblock %}
+        </div>
+        {% block body %}{% endblock %}
+    </div>
+</body>
+</html>

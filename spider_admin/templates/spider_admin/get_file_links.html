@@ -1,0 +1,16 @@
+{% if file_links %}
+    <tr>
+        <th>date</th>
+        <th>parent</th>
+        <th>file</th>
+    </tr>
+    {% for file_link in file_links %}
+        <tr>
+            <td style="color: #606065; font-size: 12px;">{{ file_link.data_update|date:'d-m-Y H:i' }}</td>
+            <td><a target="_blank" href="{{ file_link.parent_url }}">{{ file_link.parent_url }}</a></td>
+            <td><a target="_blank" href="{{ file_link.url }}">{{ file_link.url }}</a></td>
+        </tr>
+    {% endfor %}
+{% else %}
+    no any links
+{% endif %}

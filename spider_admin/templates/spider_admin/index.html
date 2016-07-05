@@ -1,0 +1,309 @@
+{% extends 'spider_admin/base.html' %}
+
+{% block gf_main_title %} list of websites{% endblock %}
+
+{% block gf_main_content %}
+
+    {% if websites %}
+        {# ====================================================================================================== #}
+        <script>
+            // TODO: необходимо дождатся ответа, только если пришел ответ - после можно обновлять статус сайта
+            // управление сканированием сайта
+            function scan_start(website_id){
+                set_website_action(website_id, '<font color="#777">run scan</font>');
+                set_website_status(website_id, '<span style="color:#79631d;">waiting</span>');
+                $.get('/website/'+website_id+'/start_scan/', ajax_result,'json');
+                function ajax_result(response){ console.log('scan_start', response)}
+            }
+            function scan_stop(website_id,scan_id){
+                set_website_action(website_id, '<font color="#777">stop</font>');
+                set_website_status(website_id, '');
+                $.get('/scan/'+scan_id+'/stop/', ajax_result,'json');
+                function ajax_result(response){ console.log('scan_start', response)}
+            }
+            function scan_delete(website_id,scan_id){
+                set_website_action(website_id, '<font color="#777">cancel</font>');
+                set_website_status(website_id, '');
+                $.get('/scan/'+scan_id+'/delete/', ajax_result,'json');
+                function ajax_result(response){ console.log('scan_start', response)}
+            }
+            var html_scan_start  =function(website_id){        return '<a href="javascript:scan_start('+ website_id+            ');">run scan</a>'; };
+            var html_scan_stop   =function(website_id,scan_id){return '<a href="javascript:scan_stop('+  website_id+','+scan_id+');">stop</a>';     };
+            var html_scan_delete =function(website_id,scan_id){return '<a href="javascript:scan_delete('+website_id+','+scan_id+');">delete</a>';   };
+        </script>
+
+        {#  ------------- автоматическое обновление информации по сайтам ---------------  #}
+        <script>
+            // обновляем информацию по таймеру через AJAX
+            $(document).ready(function(){ ifo_updater(); setInterval(ifo_updater, 2000); });
+            function ifo_updater(){
+                $.get('/get_websites_info/', ajax_result_get_websites_last_scan_status,'json')
+            }function ajax_result_get_websites_last_scan_status(returnedData) {
+
+                // возможные статусы для сайтов
+                var STATUS_WAITING      = 'waiting';
+                var STATUS_WORKING      = 'working';
+                var STATUS_READY        = 'ready';
+                var STATUS_TERMINATE    = 'terminate';
+                // переберам каждый сайт
+                returnedData.forEach(function (elm) {
+                    // распоковываем информацию по сайту
+                    var website_id      = elm['website_id'];     // id сайта
+                    var count_scans     = elm['count_scans'];    // количество сканирований
+                    var count_files     = elm['count_files'];    // количество файлов
+                    // TODO: после нажатия на start кнопка меняется на неактивную а после снова сбрасывается на активную, затем переходит в состояние waiting
+                    // необходимо заблокировать обновление статуса (для сайта) пока не вернется результат ajax запроса scan_start
+                    // та же пролема с кнопкой stop
+                    // причем
+                    set_website_action(website_id, html_scan_start(website_id));
+                    set_website_status(website_id, '');
+                    console.log('--------------------');
+                    console.log('1) website info ', elm);
+
+                    var last_scan_info  = elm['last_scan_info']; // информация по последнему сканированию
+                    if( last_scan_info == undefined )return;
+                    var scan_id             = last_scan_info['scan_id'];   // id сканирования
+                    var scan_status         = last_scan_info['status'];    // состояние сканирования
+                    if((scan_status == STATUS_READY)||(scan_id==undefined)) return ;
+                    console.log('2) scan info ',last_scan_info);
+
+
+                    set_website_action(website_id, html_scan_delete(website_id,scan_id));
+                    if(scan_status == STATUS_WAITING)   set_website_status(website_id, 'waiting');
+                    if(scan_status == STATUS_TERMINATE) set_website_status(website_id, 'terminate');
+
+
+                    var process_info        = last_scan_info['process'];   // информация о процессе выполнения
+                    if( process_info == undefined) return ;
+                    var process_status      = process_info['status'];                // статус процесса
+                    var count_file_links    = process_info['count_file_links'];      // количество файлов
+                    var count_opened_pages  = process_info['count_opened_pages'];    // количество посещеных страниц
+                    var count_saved_links   = process_info['count_saved_links'];     // количество сохраненных ссылок
+
+                    console.log('3) process info ', process_info);
+                    if( count_file_links   == undefined ) count_file_links   = 0;
+                    if( count_opened_pages == undefined ) count_opened_pages = 0;
+                    if( count_saved_links  == undefined ) count_saved_links  = 0;
+
+                    var PROCESS_STATUS_WORKING  = 'working';
+                    var PROCESS_STATUS_SAVING   = 'saving';
+                    if(process_status == PROCESS_STATUS_WORKING) {
+                        set_website_action(website_id, html_scan_stop(website_id, scan_id));
+                        set_website_status(website_id, '' + count_file_links + ' files / ' + count_opened_pages + ' pages');
+                    }
+                    if(process_status == PROCESS_STATUS_SAVING) {
+                        set_website_action(website_id, html_scan_delete(website_id, scan_id));
+                        set_website_status(website_id, '' + count_saved_links + ' saved /'+count_file_links);
+                    }
+                });
+            }
+        </script>
+        {#  ------------- /автоматическое обновление информации по сайтам ---------------  #}
+
+
+
+        <script type = "text/javascript" >
+            {#  вывод список найденных файлов для сайта по конкретному сканированию          #}
+            function get_scan_data(website_id, year, month, day,number) {
+                {#       /get_scan/website/4/data/2016/05/12/number/0/        #}
+                if( ! number) number = 99;
+                var url = "/get_scan/website/" + website_id +'/data/'+year+'/'+month+'/'+day+'/number/'+number+'/';
+                $.get( url, ajax_result_get_scans(website_id,year,month,day,number) );
+            }
+            function ajax_result_get_scans(website_id, year, month, day,number) {
+                return function (returnedData) {
+                    set_website_info(website_id, returnedData, 'token'+year+month+day+number);
+                }
+            }
+        </script>
+        {# ====================================================================================================== #}
+
+
+
+
+        {# ====================================================================================================== #}
+        <style  >
+            .website_url a{
+                display: block;
+                overflow: hidden;
+                max-width: 200px;
+            }
+        </style>
+        {# ====================================================================================================== #}
+
+
+
+        {# ====================================================================================================== #}
+        <table class="scans">
+        {#  ---------------------  заголовок таблицы  ---------------------  #}
+            <thead>
+                <tr id="table_scans_head" >
+                {#  <th rowspan="2" > id                    </th>#}
+                    <th rowspan="2" > del                   </th>
+                    <th rowspan="2" > url                   </th>
+                    <th rowspan="2"> count<br>scans           </th>
+                    <th rowspan="2" > total<br>files           </th>
+                    <th rowspan="2" > status                </th>
+                    <th rowspan="2" > action                </th>
+
+                    {% for month in websites.calendar_month %}
+                        <th colspan="{{ month|length }}" > {{ month.0|date:'M' }}</th>
+                    {% endfor %}
+                </tr>
+
+                <tr id="table_scans_head_calendar" class="calendar_title">
+                    {% for month in websites.calendar_month %}
+                        {% for day in month %}
+                            <td >{{ day|date:'d' }}</td>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            </thead>
+        {#  ---------------------  /заголовок таблицы  ---------------------  #}
+
+
+
+        {#  ------------------------  выводим сайты  -----------------------  #}
+            {% for website in websites %}
+
+                {#  -------  выводим информацию отображаемую сразу ---------  #}
+                <tr>
+{#                    <td>{{ website.id }}</td>#}
+                    {# удалить сайт #}
+                    <td><a href='/website/{{ website.id }}/delete/'>x</a></td>
+
+                    {# адрес сайта #}
+                    <td class="website_url"><a href='{{ website.url }}' title="{{ website.url }}">{{ website.url }}</a></td>
+{#                    <td class="website_url">#}
+{#                        <a href='/website/{{ website.id }}/files/' title="see all files" target="_blank">{{ website.url }}</a>#}
+{#                    </td>#}
+
+                    {# количество сканирований #}
+                    <td style="text-align: center; color: #555;" id="td_website_{{ website.id }}_count_scans"> {{ website.count_total_scans }} </td>
+
+                    {# количество файловых ссылок #}
+                    <td style="text-align: right" id="td_website_{{ website.id }}_count_file_links">
+                        {% if website.count_total_file_links > 0 %}
+                            <a href='/website/{{ website.id }}/files/' title="see all files" target="_blank">
+                                {{ website.count_total_file_links }}
+                            </a>
+                            <div class = "info_popup_background"><div class="info_popup" style="border-color: #657fca">
+                                click to see all fined files <br>for this website
+                            </div></div>
+                        {% else %}
+                            {{ website.count_total_file_links }}
+                        {% endif %}
+                    </td>
+
+                    {# статус сканирования #}
+                    <td id="td_website_{{ website.id }}_status" ><!-- set by ajax --></td>
+
+                    {# управление сканированием #}
+                    <td id='td_website_{{ website.id }}_action'><a href="javascript:scan_start({{ website.id }});">run scan</a><!-- set by ajax --> </td>
+
+
+                    {# вывод линейного календаря для сайта #}
+                    {% for calendar_dey in website.calendar %}
+                        <td class="calendar_dey" id="td_website_{{ website.id }}_dey_{{ calendar_dey.data|date:"Y_m_d" }}">
+                            {% if calendar_dey.scans|length > 0 %}
+
+                                {# подсветка календарного дня #}
+                                {% if calendar_dey.count_file_links_new > 0 %}
+                                    <a class="have_files"
+                                        href="javascript:get_scan_data( '{{ website.id }}'
+                                            , {{ calendar_dey.data|date:" 'Y','m','d' " }});" ><a>
+                                {% else %}
+                                    <a class="no_files"></a>
+                                {% endif %}
+
+                                {# вывод дополнительной информации  #}
+                                <div class = "info_popup_background"><div class="info_popup">
+                                    data:{{ calendar_dey.data }} <br>
+                                    count scans: {{ calendar_dey.scans|length }}<br>
+                                    new files: +{{ calendar_dey.count_file_links_new }}<br>
+                                </div></div>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {#  -------  /выводим информацию отображаемую сразу --------  #}
+
+
+
+                {#  -----  выводим скрытую информацию (поаз по клику)  -----  #}
+
+                {#  вывод дополнительной информации по кокретному сайту ("выподающий блок" под сайтом) #}
+                <tr></tr> {#  пустая строка - что бы не сбивать подсветку строк "через одну" в css #}
+                <tr>
+                    <td class="website_info_hidden" id='website_{{ website.id }}_hidden_info' colspan="37" >
+                        <div class="button_hide">
+                                <a href="javascript:website_info_hide({{ website.id }});">( hide )</a>
+                        </div>
+                        <div class="content" id='website_{{ website.id }}_hidden_info_content'><!-- set by ajax --></div>
+                    </td>
+                </tr>
+                {# поля для размещения копии заголовка устанавливаются через JS #}
+                <tr id="hidden_header_website_{{ website.id }}"><!-- set by js --></tr>
+                <tr id="hidden_header_website_{{ website.id }}_calendar" class="calendar_title"><!-- set by js --></tr>
+
+                {#  -----  /выводим скрытую информацию (поаз по клику)  -----  #}
+
+
+            {% endfor %}
+        {#  ------------------------  /выводим сайты  -----------------------  #}
+        </table>
+        {# ====================================================================================================== #}
+
+
+
+        {# ====================================================================================================== #}
+        <script type = "text/javascript" >
+            {# доступ к элементам таблицы через JS #}
+            function set_website_status(            website_id,         html){  $('#td_website_'+website_id+'_status'            ).html(html)   }
+            function set_website_action(            website_id,         html){  $('#td_website_'+website_id+'_action'            ).html(html)   }
+            function set_website_count_scans(       website_id,         html){  $('#td_website_'+website_id+'_count_scans'       ).html(html)   }
+            function set_website_count_file_links(  website_id,         html){  $('#td_website_'+website_id+'_count_file_links'  ).html(html)   }
+            function set_website_calendar_dey(      website_id,y,m,d,   html){  $('#td_website_'+website_id+'_dey_'+y+'_'+m+'_'+d).html(html)   }
+
+
+        {#  ----- блок управления дополнительной информацией к сайту ("выподающий блок") ----  #}
+            function website_info_show(website_id) {
+                $('#website_'+website_id+'_hidden_info').show();
+
+                // после блока информации - добовляем заголовок таблицы
+                var elm = $('#hidden_header_website_'+website_id)[0];
+                elm.innerHTML = $('#table_scans_head')[0].innerHTML;
+                var elm = $('#hidden_header_website_'+website_id+'_calendar')[0];
+                elm.innerHTML = $('#table_scans_head_calendar')[0].innerHTML;
+            }
+            function website_info_hide(website_id) {
+                $('#website_'+website_id+'_hidden_info').hide();
+                // после блока информации - удаляем заголовок таблицы
+                $('#hidden_header_website_'+website_id            )[0].innerHTML ='';
+                $('#hidden_header_website_'+website_id+'_calendar')[0].innerHTML ='';
+            }
+            {#  website_info_showing - показать/ скрыть блок дополнительной информации       #}
+            {#  токен необходим при наличии 2х открывающих ссылок                            #}
+            {#  если нажали на 1ю ссылку блок должен открыться         токен 1               #}
+            {#  если нажали на 2ю ссылку блок должен остатся открытым  токен 2               #}
+            {#  если снова нажали на 2ю ссылку - нужно закрыть блок    токен 2               #}
+            var websites_last_token = {};
+            function website_info_showing(website_id, token) {
+                if(websites_last_token[website_id] == token){
+                        $('#website_'+website_id+'_hidden_info_content').html('');
+                        website_info_hide(website_id);  websites_last_token[website_id] = undefined;
+                }else{  website_info_show(website_id);  websites_last_token[website_id] = token;    }
+            }
+            function set_website_info(website_id,data, token) {
+                if(token){ website_info_showing(website_id, token); } {# отображаем блок доп информации #}
+                $('#website_'+website_id+'_hidden_info_content').html(data);
+            }
+        {#  ----- /блок управления дополнительной информацией к сайту ("выподающий блок") ----  #}
+
+        </script>
+
+        {# ====================================================================================================== #}
+    {% endif %}
+
+
+{% endblock %}

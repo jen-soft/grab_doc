@@ -11,6 +11,7 @@ django-redis-cache==1.6.5
 flower==0.9.1
 futures==3.0.5
 grab==0.6.30
+gunicorn==19.6.0
 kombu==3.0.35
 lxml==3.6.0
 pycurl==7.43.0
